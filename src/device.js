@@ -26,7 +26,7 @@ class YeeDevice extends EventEmitter {
     try {
       this.forceDisconnect = false
       this.socket = new net.Socket()
-      this.bindSocket()
+      this.bind()
       this.socket.connect({ host: this.device.host, port: this.device.port }, () => {
         this.didConnect()
         this.emit('connected')
@@ -46,9 +46,9 @@ class YeeDevice extends EventEmitter {
     if (this.forceDisconnect && this.retry_timer) clearTimeout(this.retry_timer)
   }
 
-  bindSocket() {
+  bind() {
     this.socket.on('data', (data) => {
-      this.didReceiveResponse(data)
+      this.handleResponse(data)
     })
 
     this.socket.on('error', (err) => {
@@ -87,27 +87,27 @@ class YeeDevice extends EventEmitter {
   }
 
   sendHeartBeat() {
-    this.sendCommand({
+    this.send({
       id: 199,
       method: 'get_prop',
       params: this.tracked_attrs,
     })
   }
 
-  didReceiveResponse(data) {
+  handleResponse(data) {
     const dataArray = data.toString('utf8').split('\r\n')
     dataArray.forEach((dataString) => {
       if (dataString.length < 1) return
       try {
         const response = JSON.parse(dataString)
-        this.emit('deviceUpdate', response)
+        this.emit('update', response)
       } catch (err) {
         console.log(err, dataString)
       }
     })
   }
 
-  sendCommand(data) {
+  send(data) {
     const cmd = JSON.stringify(data)
     if (this.connected && this.socket) {
       try {
@@ -118,7 +118,7 @@ class YeeDevice extends EventEmitter {
     }
   }
 
-  updateDevice(device) {
+  update(device) {
     this.device = device
   }
 }

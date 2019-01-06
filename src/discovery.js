@@ -64,7 +64,7 @@ class YeeDiscovery extends EventEmitter {
       const parsedUrl = url.parse(device.Location)
       device.host = parsedUrl.hostname
       device.port = parsedUrl.port
-      this.emit('didDiscoverDevice', device)
+      this.emit('discovered', device)
     }
   }
 }
