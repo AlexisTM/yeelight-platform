@@ -17,7 +17,7 @@ class YeeDevice extends EventEmitter {
     this.connected = false
     this.forceDisconnect = false
     this.timer = null
-    this.tracked_attrs = this.device.tracked_attrs || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct']
+    this.attributes = this.device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct']
     this.polligInterval = this.device.interval || 5000
     this.retry_timer = null
   }
@@ -90,7 +90,7 @@ class YeeDevice extends EventEmitter {
     this.send({
       id: 199,
       method: 'get_prop',
-      params: this.tracked_attrs,
+      params: this.attributes,
     })
   }
 
