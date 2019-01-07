@@ -13,6 +13,7 @@ class YeeDevice extends EventEmitter {
   constructor(device) {
     super()
     this.device = device
+    this.id = this.device.id || 100;
     this.debug = this.device.debug || false
     this.connected = false
     this.forceDisconnect = false
@@ -88,7 +89,7 @@ class YeeDevice extends EventEmitter {
 
   sendHeartBeat() {
     this.send({
-      id: 199,
+      id: this.id,
       method: 'get_prop',
       params: this.attributes,
     })
