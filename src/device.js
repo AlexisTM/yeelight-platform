@@ -18,7 +18,12 @@ class YeeDevice extends EventEmitter {
     this.connected = false
     this.forceDisconnect = false
     this.timer = null
-    this.attributes = this.device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct']
+    this.attributes_names = this.device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct'];
+    this.attributes = {}
+    for (let index = 0; index < this.attributes_names.length; index++) {
+      let att = this.attributes_names[index];
+      this.attributes[att] = null;
+    }
     this.polligInterval = this.device.interval || 5000
     this.retry_timer = null
   }
@@ -87,11 +92,18 @@ class YeeDevice extends EventEmitter {
     this.timer = setInterval(this.sendHeartBeat.bind(this), this.polligInterval)
   }
 
+  merge(arr, brr) {
+    for (let i = 0; i < arr.length; i++) {
+      obj[arr[i]] = brr[i];
+    }
+    return obj;
+  }
+
   sendHeartBeat() {
     this.send({
-      id: this.id,
+      id: 199,
       method: 'get_prop',
-      params: this.attributes,
+      params: this.attributes_names,
     })
   }
 
@@ -101,7 +113,16 @@ class YeeDevice extends EventEmitter {
       if (dataString.length < 1) return
       try {
         const response = JSON.parse(dataString)
-        this.emit('update', response)
+        if(response.id == 199) {
+          if(response.length == this.attributes.length) {
+            for (let index = 0; index < this.attributes_names.length; index++) {
+              this.attributes[this.attributes_names[index]] = response.result[index];
+            }
+            this.emit('update', this.attributes, this)
+          }
+        } else {
+          this.emit('response', response, this)
+        }
       } catch (err) {
         console.log(err, dataString)
       }
