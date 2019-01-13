@@ -129,6 +129,15 @@ class YeeDevice extends EventEmitter {
     })
   }
 
+  sendCommand(method, params, id = -1) {
+    let msg = {
+      "id": id,
+      "method": method,
+      "params": params
+    };
+    this.send(msg);
+  }
+
   send(data) {
     const cmd = JSON.stringify(data)
     if (this.connected && this.socket) {
