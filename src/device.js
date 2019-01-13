@@ -12,19 +12,21 @@ const net = require('net')
 class YeeDevice extends EventEmitter {
   constructor(device) {
     super()
-    this.device = device
-    this.id = this.device.id || 100;
-    this.debug = this.device.debug || false
+    this.id = device.id || 100;
+    this.debug = device.debug || false
     this.connected = false
     this.forceDisconnect = false
     this.timer = null
-    this.attributes_names = this.device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct'];
+    this.host = device.host
+    this.port = device.port
+    this.model = device.model // can be undefined
+    this.attributes_names = device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct'];
     this.attributes = {}
     for (let index = 0; index < this.attributes_names.length; index++) {
       let att = this.attributes_names[index];
       this.attributes[att] = null;
     }
-    this.polligInterval = this.device.interval || 5000
+    this.polligInterval = device.interval || 5000
     this.retry_timer = null
   }
 
@@ -33,7 +35,7 @@ class YeeDevice extends EventEmitter {
       this.forceDisconnect = false
       this.socket = new net.Socket()
       this.bind()
-      this.socket.connect({ host: this.device.host, port: this.device.port }, () => {
+      this.socket.connect({ host: this.host, port: this.port }, () => {
         this.didConnect()
         this.emit('connected')
       })
@@ -150,7 +152,9 @@ class YeeDevice extends EventEmitter {
   }
 
   update(device) {
-    this.device = device
+    for(let key in device) {
+      this[key] = device[key];
+    }
   }
 }
 
