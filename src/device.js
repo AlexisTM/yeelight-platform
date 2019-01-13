@@ -13,10 +13,17 @@ class YeeDevice extends EventEmitter {
   constructor(device) {
     super()
     this.device = device
+    this.id = this.device.id || 100;
     this.debug = this.device.debug || false
     this.connected = false
     this.forceDisconnect = false
     this.timer = null
+    this.attributes_names = this.device.attributes || ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct'];
+    this.attributes = {}
+    for (let index = 0; index < this.attributes_names.length; index++) {
+      let att = this.attributes_names[index];
+      this.attributes[att] = null;
+    }
     this.polligInterval = this.device.interval || 5000
     this.retry_timer = null
   }
@@ -25,7 +32,7 @@ class YeeDevice extends EventEmitter {
     try {
       this.forceDisconnect = false
       this.socket = new net.Socket()
-      this.bindSocket()
+      this.bind()
       this.socket.connect({ host: this.device.host, port: this.device.port }, () => {
         this.didConnect()
         this.emit('connected')
@@ -45,9 +52,9 @@ class YeeDevice extends EventEmitter {
     if (this.forceDisconnect && this.retry_timer) clearTimeout(this.retry_timer)
   }
 
-  bindSocket() {
+  bind() {
     this.socket.on('data', (data) => {
-      this.didReceiveResponse(data)
+      this.handleResponse(data)
     })
 
     this.socket.on('error', (err) => {
@@ -85,28 +92,53 @@ class YeeDevice extends EventEmitter {
     this.timer = setInterval(this.sendHeartBeat.bind(this), this.polligInterval)
   }
 
+  merge(arr, brr) {
+    for (let i = 0; i < arr.length; i++) {
+      obj[arr[i]] = brr[i];
+    }
+    return obj;
+  }
+
   sendHeartBeat() {
-    this.sendCommand({
+    this.send({
       id: 199,
       method: 'get_prop',
-      params: ['power', 'bright', 'rgb', 'flowing', 'flow_params', 'hue', 'sat', 'ct'],
+      params: this.attributes_names,
     })
   }
 
-  didReceiveResponse(data) {
+  handleResponse(data) {
     const dataArray = data.toString('utf8').split('\r\n')
     dataArray.forEach((dataString) => {
       if (dataString.length < 1) return
       try {
         const response = JSON.parse(dataString)
-        this.emit('deviceUpdate', response)
+        if(response.id == 199) {
+          if(response.length == this.attributes.length) {
+            for (let index = 0; index < this.attributes_names.length; index++) {
+              this.attributes[this.attributes_names[index]] = response.result[index];
+            }
+            this.emit('update', this.attributes, this)
+          }
+        } else {
+          this.emit('response', response, this)
+        }
       } catch (err) {
         console.log(err, dataString)
       }
     })
   }
 
-  sendCommand(data) {
+  sendCommand(method, params, id = -1) {
+    let msg = {
+      "id": id,
+      "method": method,
+      "params": params
+    };
+    this.send(msg);
+  }
+
+  send(data) {
     const cmd = JSON.stringify(data)
     if (this.connected && this.socket) {
       try {
@@ -117,7 +149,7 @@ class YeeDevice extends EventEmitter {
     }
   }
 
-  updateDevice(device) {
+  update(device) {
     this.device = device
   }
 }
