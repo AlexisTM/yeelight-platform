@@ -6,10 +6,12 @@
 //  Copyright © 2018 sahilchaddha.com. All rights reserved.
 //
 
-const YeeDiscovery = require('./src/discovery')
-const YeeDevice = require('./src/device')
+const YeeDiscovery = require('./src/discovery');
+const YeeDevice = require('./src/device');
+const YeeConstants = require('./src/constants');
 
 module.exports = {
   Discovery: YeeDiscovery,
   Device: YeeDevice,
+  Constants: YeeConstants
 }
